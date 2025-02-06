@@ -11,7 +11,7 @@ func main() {
 	params, _ := url.ParseQuery(myUrl.RawQuery)
 	//fmt.Println(params)
 
-	word := params.Get("word")
+	word := params.Get("word") //value veriyor
 	fmt.Println(product)
 	
 
