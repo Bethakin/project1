@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+func get_word(
 func main() {
 	// GET endpoint'i tanımla
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
