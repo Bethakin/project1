@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Bethakin/project1/api/handler"
+	"github.com/Bethakin/project1/project1/api/handler"
 )
 
 func main() {
