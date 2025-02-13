@@ -1,9 +1,8 @@
-package todo
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	"github.com/gorilla/mux"
 )
@@ -26,8 +25,6 @@ func Create_todo(w http.ResponseWriter, r *http.Request) {
 	todos = append(todos, newtodo)
 
 }
-
-var mu sync.Mutex
 
 func Delete_todo(w http.ResponseWriter, r *http.Request) {
 	parameters := mux.Vars(r)
