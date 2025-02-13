@@ -2,17 +2,23 @@ package handler
 
 import (
 	"encoding/json"
+
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
 type Todo struct {
+	ID          int    `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
-var todos []Todo
+var (
+	todos  = make(map[int]*Todo)
+	nextID = 1
+)
 
 func Show_todos(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -20,31 +26,36 @@ func Show_todos(w http.ResponseWriter, r *http.Request) {
 }
 
 func Create_todo(w http.ResponseWriter, r *http.Request) {
-	var newtodo Todo
+	var newtodo *Todo
 	_ = json.NewDecoder(r.Body).Decode(&newtodo)
-	todos = append(todos, newtodo)
-
+	nextID += 1
+	newtodo.ID = nextID
+	//newtodo_wid := map[int]Todo{nextID: newtodo}
+	todos[nextID] = newtodo
 }
 
 func Delete_todo(w http.ResponseWriter, r *http.Request) {
 	parameters := mux.Vars(r)
-	title := parameters["title"]
-	for i, todo := range todos {
-		if todo.Title == title {
-			todos = append(todos[:i], todos[i+1:]...)
+	id_str := parameters["id"]
+	id, _ := strconv.Atoi(id_str)
+	for _, todo := range todos {
+		if todo.ID == id {
+			delete(todos, id)
 			return
 		}
 	}
 }
 
 func Update_todo(w http.ResponseWriter, r *http.Request) {
-	var uptodo Todo
+	var uptodo *Todo
 	_ = json.NewDecoder(r.Body).Decode(&uptodo)
 	parameters := mux.Vars(r)
-	title := parameters["title"]
-	for i, todo := range todos {
-		if todo.Title == title {
-			todos[i].Description = uptodo.Description
+	id_str := parameters["id"]
+	id, _ := strconv.Atoi(id_str)
+	for _, todo := range todos {
+		if todo.ID == id {
+			todos[id].Description = uptodo.Description
+			todos[id].Title = uptodo.Title
 		}
 	}
 }
