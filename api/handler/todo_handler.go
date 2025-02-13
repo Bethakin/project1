@@ -8,11 +8,15 @@ import (
 )
 
 type Todo struct {
+	ID          int    `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
-var todos []Todo
+var (
+	todos  = make(map[int]Todo)
+	nextID = 1
+)
 
 func Show_todos(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
