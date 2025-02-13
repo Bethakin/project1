@@ -48,13 +48,3 @@ func Update_todo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-
-/*
-func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/todos", show_todos).Methods("GET")
-	router.HandleFunc("/todos", create_todo).Methods("POST")
-	router.HandleFunc("/todos/{title}", delete_todo).Methods("DELETE")
-	router.HandleFunc("/todos/{title}", update_todo).Methods("PUT")
-	log.Fatal(http.ListenAndServe(":8080", router))
-}*/
