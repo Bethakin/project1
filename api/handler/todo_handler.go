@@ -9,6 +9,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type New_todo struct {
+	//ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
 type Todo struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
@@ -26,12 +32,17 @@ func Show_todos(w http.ResponseWriter, r *http.Request) {
 }
 
 func Create_todo(w http.ResponseWriter, r *http.Request) {
-	var newtodo *Todo
+	var newtodo *New_todo
+	//var n_todo *Todo
 	_ = json.NewDecoder(r.Body).Decode(&newtodo)
 	nextID += 1
-	newtodo.ID = nextID
+	n_todo := &Todo{
+		ID:          nextID,
+		Title:       newtodo.Title,
+		Description: newtodo.Description,
+	}
 	//newtodo_wid := map[int]Todo{nextID: newtodo}
-	todos[nextID] = newtodo
+	todos[nextID] = n_todo
 }
 
 func Delete_todo(w http.ResponseWriter, r *http.Request) {
