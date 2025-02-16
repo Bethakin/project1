@@ -9,11 +9,16 @@ import (
 )
 
 func main() {
+	todoHandler := handler.NewTodoHandler()
 	router := mux.NewRouter()
-	router.HandleFunc("/", handler.Welcome).Methods("GET")
-	router.HandleFunc("/todos", handler.Show_todos).Methods("GET")
-	router.HandleFunc("/todos", handler.Create_todo).Methods("POST")
-	router.HandleFunc("/todos/{id}", handler.Delete_todo).Methods("DELETE")
-	router.HandleFunc("/todos/{id}", handler.Update_todo).Methods("PUT")
-	log.Fatal(http.ListenAndServe(":8080", router))
+
+	router.HandleFunc("/todos", todoHandler.Index).Methods("GET")
+	router.HandleFunc("/todos", todoHandler.Create).Methods("POST")
+	router.HandleFunc("/todos/{id}", todoHandler.Delete).Methods("DELETE")
+	router.HandleFunc("/todos/{id}", todoHandler.Update).Methods("PUT")
+
+	log.Println("Server starting on port 8080...")
+	if err := http.ListenAndServe(":8080", router); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }
