@@ -42,14 +42,12 @@ func Create_todo(w http.ResponseWriter, r *http.Request) {
 	}
 	todos[nextID] = n_todo
 }
-
 func Delete_todo(w http.ResponseWriter, r *http.Request) {
 	parameters := mux.Vars(r)
 	id_str := parameters["id"]
 	id, _ := strconv.Atoi(id_str)
 	delete(todos, id)
 }
-
 func Update_todo(w http.ResponseWriter, r *http.Request) {
 	var uptodo *Todo
 	_ = json.NewDecoder(r.Body).Decode(&uptodo)
