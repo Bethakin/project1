@@ -33,7 +33,6 @@ func Show_todos(w http.ResponseWriter, r *http.Request) {
 
 func Create_todo(w http.ResponseWriter, r *http.Request) {
 	var newtodo *New_todo
-	//var n_todo *Todo
 	_ = json.NewDecoder(r.Body).Decode(&newtodo)
 	nextID += 1
 	n_todo := &Todo{
@@ -41,7 +40,6 @@ func Create_todo(w http.ResponseWriter, r *http.Request) {
 		Title:       newtodo.Title,
 		Description: newtodo.Description,
 	}
-	//newtodo_wid := map[int]Todo{nextID: newtodo}
 	todos[nextID] = n_todo
 }
 
@@ -49,12 +47,7 @@ func Delete_todo(w http.ResponseWriter, r *http.Request) {
 	parameters := mux.Vars(r)
 	id_str := parameters["id"]
 	id, _ := strconv.Atoi(id_str)
-	for _, todo := range todos {
-		if todo.ID == id {
-			delete(todos, id)
-			return
-		}
-	}
+	delete(todos, id)
 }
 
 func Update_todo(w http.ResponseWriter, r *http.Request) {
@@ -63,10 +56,6 @@ func Update_todo(w http.ResponseWriter, r *http.Request) {
 	parameters := mux.Vars(r)
 	id_str := parameters["id"]
 	id, _ := strconv.Atoi(id_str)
-	for _, todo := range todos {
-		if todo.ID == id {
-			todos[id].Description = uptodo.Description
-			todos[id].Title = uptodo.Title
-		}
-	}
+	todos[id].Description = uptodo.Description
+	todos[id].Title = uptodo.Title
 }
