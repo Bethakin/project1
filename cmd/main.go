@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	todoHandler := handler.NewTodoHandler()
+	todoHandler := handler.NewTodoHandlerDB()
 	router := mux.NewRouter()
 
 	router.HandleFunc("/todos", todoHandler.Index).Methods("GET")
@@ -17,8 +17,8 @@ func main() {
 	router.HandleFunc("/todos/{id}", todoHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/todos/{id}", todoHandler.Update).Methods("PUT")
 
-	log.Println("Server starting on port 8080...")
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	log.Println("Server starting on port 8081...")
+	if err := http.ListenAndServe(":8081", router); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
