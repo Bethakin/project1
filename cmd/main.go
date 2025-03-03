@@ -12,7 +12,8 @@ func main() {
 	todoHandler := handler.NewTodoHandlerDB()
 	router := mux.NewRouter()
 
-	router.HandleFunc("/todos", todoHandler.Index).Methods("GET")
+	router.HandleFunc("/todos", todoHandler.Index2).Methods("GET")
+	router.HandleFunc("/todos/{id}", todoHandler.Index).Methods("GET")
 	router.HandleFunc("/todos", todoHandler.Create).Methods("POST")
 	router.HandleFunc("/todos/{id}", todoHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/todos/{id}", todoHandler.Update).Methods("PUT")
