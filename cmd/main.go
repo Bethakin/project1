@@ -5,15 +5,22 @@ import (
 	"net/http"
 
 	"github.com/Bethakin/project1/api/handler"
+	"github.com/Bethakin/project1/internal/database"
 	"github.com/gorilla/mux"
 )
 
 func main() {
-	todoHandler := handler.NewTodoHandlerDB()
+	db, err := database.NewDatabase()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	todoHandler := handler.NewTodoHandler(db)
+
 	router := mux.NewRouter()
 
-	router.HandleFunc("/todos", todoHandler.Index2).Methods("GET")
-	router.HandleFunc("/todos/{id}", todoHandler.Index).Methods("GET")
+	router.HandleFunc("/todos", todoHandler.Index).Methods("GET")
+	router.HandleFunc("/todos/{id}", todoHandler.Show).Methods("GET")
 	router.HandleFunc("/todos", todoHandler.Create).Methods("POST")
 	router.HandleFunc("/todos/{id}", todoHandler.Delete).Methods("DELETE")
 	router.HandleFunc("/todos/{id}", todoHandler.Update).Methods("PUT")

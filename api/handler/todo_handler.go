@@ -4,39 +4,61 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"sync"
 
-	"github.com/Bethakin/project1/model"
+	"github.com/Bethakin/project1/internal/database"
+	"github.com/Bethakin/project1/internal/model"
 	"github.com/gorilla/mux"
 )
 
 type TodoHandler struct {
-	todos  map[int]*model.Todo
-	nextID int
-	mutex  sync.RWMutex
+	db *database.Database
 }
 
-func NewTodoHandler() *TodoHandler {
+func NewTodoHandler(db *database.Database) *TodoHandler {
 	return &TodoHandler{
-		todos:  make(map[int]*model.Todo),
-		nextID: 1,
-		mutex:  sync.RWMutex{},
+		db: db,
 	}
 }
 
 func (h *TodoHandler) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	h.mutex.RLock()
-	todoList := make([]*model.Todo, 0, len(h.todos))
-	for _, todo := range h.todos {
-		todoList = append(todoList, todo)
+	todos, err := h.db.GetAllTodos()
+	if err != nil {
+		http.Error(w, "Error fetching todos", http.StatusInternalServerError)
+		return
 	}
-	h.mutex.RUnlock()
 
 	response := model.Response{
 		Message: "Todos retrieved successfully",
-		Data:    todoList,
+		Data:    todos,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *TodoHandler) Show(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	todo, err := h.db.GetTodoByID(id)
+	if err != nil {
+		http.Error(w, "Todo not found", http.StatusNotFound)
+		return
+	}
+
+	response := model.Response{
+		Message: "Todo retrieved successfully",
+		Data:    todo,
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -48,26 +70,26 @@ func (h *TodoHandler) Index(w http.ResponseWriter, r *http.Request) {
 func (h *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var req model.TodoRequest
+	var req model.TodoRequestUser
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if req.Title == "" {
-		http.Error(w, "Title is required", http.StatusBadRequest)
+	if req.Email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
 		return
 	}
 
-	h.mutex.Lock()
-	todo := &model.Todo{
-		ID:          h.nextID,
-		Title:       req.Title,
-		Description: req.Description,
+	todo := &model.TodoUser{
+		Email:    req.Email,
+		Password: req.Password,
 	}
-	h.todos[h.nextID] = todo
-	h.nextID++
-	h.mutex.Unlock()
+
+	if err := h.db.CreateTodo(todo); err != nil {
+		http.Error(w, "Error creating todo", http.StatusInternalServerError)
+		return
+	}
 
 	response := model.Response{
 		Message: "Todo created successfully",
@@ -88,15 +110,10 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.mutex.Lock()
-	if _, exists := h.todos[id]; !exists {
-		h.mutex.Unlock()
-		http.Error(w, "Todo not found", http.StatusNotFound)
+	if err := h.db.DeleteTodo(id); err != nil {
+		http.Error(w, "Error deleting todo", http.StatusInternalServerError)
 		return
 	}
-
-	delete(h.todos, id)
-	h.mutex.Unlock()
 
 	response := model.Response{
 		Message: "Todo deleted successfully",
@@ -116,27 +133,21 @@ func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req model.TodoRequest
+	var req model.TodoRequestUser
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	h.mutex.Lock()
-	todo, exists := h.todos[id]
-	if !exists {
-		h.mutex.Unlock()
-		http.Error(w, "Todo not found", http.StatusNotFound)
-		return
+	todo := &model.TodoUser{
+		Email:    req.Email,
+		Password: req.Password,
 	}
 
-	if req.Title != "" {
-		todo.Title = req.Title
+	if err := h.db.UpdateTodo(id, todo); err != nil {
+		http.Error(w, "Error updating todo", http.StatusInternalServerError)
+		return
 	}
-	if req.Description != "" {
-		todo.Description = req.Description
-	}
-	h.mutex.Unlock()
 
 	response := model.Response{
 		Message: "Todo updated successfully",
