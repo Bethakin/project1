@@ -145,7 +145,7 @@ func (d *Database) DeleteuserssTodo(user_id int) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("todo with id %d not found", user_id)
+		return fmt.Errorf("user todo with id %d not found", user_id)
 	}
 	return nil
 }
