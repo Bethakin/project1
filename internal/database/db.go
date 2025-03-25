@@ -1,12 +1,13 @@
 package database
 
 import (
-	_ "database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/Bethakin/project1/model"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -15,7 +16,18 @@ type Database struct {
 }
 
 func NewDatabase() (*Database, error) {
-	connStr := "user=postgres password=27Berfin72 dbname=users sslmode=disable"
+	err := godotenv.Load()
+	if err != nil {
+		return nil, fmt.Errorf("Error loading .env file: %v", err)
+	}
+
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	sslMode := os.Getenv("DB_SSLMODE")
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", dbUser, dbPassword, dbHost, dbPort, dbName, sslMode)
 	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("error opening database: %v", err)
@@ -47,17 +59,17 @@ func (d *Database) GetAlluserss() ([]*model.Todousers, error) {
 	return todos, nil
 }
 
-func (d *Database) GetAllTodos() ([]*model.Todousers, error) {
+func (d *Database) GetAllTodos() ([]*model.Todo, error) {
 	rows, err := d.DB.Query("SELECT id, title, description FROM todos")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var todos []*model.Todousers
+	var todos []*model.Todo
 	for rows.Next() {
-		var todo model.Todousers
-		if err := rows.Scan(&todo.ID, &todo.Email, &todo.Password); err != nil {
+		var todo model.Todo
+		if err := rows.Scan(&todo.ID, &todo.Title, &todo.Description); err != nil {
 			return nil, err
 		}
 		todos = append(todos, &todo)
@@ -75,21 +87,21 @@ func (d *Database) GetTodoByID(id int) (*model.Todo, error) {
 	return &todo, nil
 }
 
-func (d *Database) GetusersByID(id int) (*model.Todousers, error) {
-	var todo model.Todousers
+func (d *Database) GetUserByID(id int) (*model.Todousers, error) {
+	var user model.Todousers
 	err := d.DB.QueryRow("SELECT id, email, password FROM users WHERE id = $1", id).
-		Scan(&todo.ID, &todo.Email, &todo.Password)
+		Scan(&user.ID, &user.Email, &user.Password)
 	if err != nil {
 		return nil, err
 	}
-	return &todo, nil
+	return &user, nil
 }
 
-func (d *Database) Createusers(todo *model.Todousers) error {
+func (d *Database) CreateUser(user *model.Todousers) error {
 	return d.DB.QueryRow(
-		"INSERT INTO userss (email, password) VALUES ($1, $2) RETURNING id",
-		todo.Email, todo.Password,
-	).Scan(&todo.ID)
+		"INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id",
+		user.Email, user.Password,
+	).Scan(&user.ID)
 }
 
 func (d *Database) CreateTodo(todo *model.Todo) error {
@@ -116,7 +128,7 @@ func (d *Database) DeleteTodo(id int) error {
 	return nil
 }
 
-func (d *Database) DeleteTheusers(id int) error {
+func (d *Database) DeleteUser(id int) error {
 	result, err := d.DB.Exec("DELETE FROM users WHERE id = $1", id)
 	if err != nil {
 		return err
@@ -128,32 +140,32 @@ func (d *Database) DeleteTheusers(id int) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("todo with id %d not found", id)
+		return fmt.Errorf("user with id %d not found", id)
 	}
 	return nil
 }
 
-func (d *Database) DeleteuserssTodo(user_id int) error {
-	result, err := d.DB.Exec("DELETE FROM todos WHERE user_id = $1", user_id)
+func (d *Database) DeleteUserTodos(user_id int) error {
+	_, err := d.DB.Exec("DELETE FROM todos WHERE user_id = $1", user_id)
 	if err != nil {
 		return err
 	}
+	/*
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("user todo with id %d not found", user_id)
-	}
+		if rowsAffected == 0 {
+			return fmt.Errorf("user todos with user_id %d not found", user_id)
+		}*/
 	return nil
 }
 
-func (d *Database) Updateusers(id int, todo *model.Todousers) error {
+func (d *Database) UpdateUser(id int, user *model.Todousers) error {
 	result, err := d.DB.Exec(
 		"UPDATE users SET email = $1, password = $2 WHERE id = $3",
-		todo.Email, todo.Password, id,
+		user.Email, user.Password, id,
 	)
 	if err != nil {
 		return err
@@ -165,15 +177,15 @@ func (d *Database) Updateusers(id int, todo *model.Todousers) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("users with id %d not found", id)
+		return fmt.Errorf("user with id %d not found", id)
 	}
 	return nil
 }
 
-func (d *Database) UpdateTodo(id int, users_id int, todo *model.Todo) error {
+func (d *Database) UpdateTodo(id int, user_id int, todo *model.Todo) error {
 	result, err := d.DB.Exec(
-		"UPDATE todos SET Title = $1, Description = $2 WHERE id = $3 and user_id = $4",
-		todo.Title, todo.Description, id, users_id,
+		"UPDATE todos SET title = $1, description = $2 WHERE id = $3 AND user_id = $4",
+		todo.Title, todo.Description, id, user_id,
 	)
 	if err != nil {
 		return err
