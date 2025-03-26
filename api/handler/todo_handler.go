@@ -30,6 +30,32 @@ func (h *TodoHandler) Show(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *TodoHandler) IndexTodo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["users_id"])
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
+	todos, err := h.db.GetTodosByUserID(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("No todos found: %s", err.Error()), http.StatusNotFound)
+		return
+	}
+
+	response := model.Response{
+		Message: "Todos retrieved successfully",
+		Data:    todos,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+}
+
 func (h *TodoHandler) ShowTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

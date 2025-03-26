@@ -87,6 +87,29 @@ func (d *Database) GetTodoByID(id int) (*model.Todo, error) {
 	return &todo, nil
 }
 
+func (d *Database) GetTodosByUserID(id int) ([]*model.Todo, error) {
+	rows, err := d.DB.Query("SELECT id, title, description FROM todos WHERE user_id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var todos []*model.Todo
+	for rows.Next() {
+		var todo model.Todo
+		if err := rows.Scan(&todo.ID, &todo.Title, &todo.Description); err != nil {
+			return nil, err
+		}
+		todos = append(todos, &todo)
+	}
+
+	if len(todos) == 0 {
+		return nil, fmt.Errorf("no todos found for user with ID %d", id)
+	}
+
+	return todos, nil
+}
+
 func (d *Database) GetUserByID(id int) (*model.Todousers, error) {
 	var user model.Todousers
 	err := d.DB.QueryRow("SELECT id, email, password FROM users WHERE id = $1", id).
