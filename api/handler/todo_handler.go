@@ -6,11 +6,20 @@ import (
 	"net/http"
 	"strconv"
 
-	_ "github.com/Bethakin/project1/internal/database"
+	"github.com/Bethakin/project1/internal/database"
 	"github.com/Bethakin/project1/model"
 	"github.com/gorilla/mux"
 )
 
+type TodoHandler struct {
+	db *database.Database
+}
+
+func NewTodoHandler(db *database.Database) *TodoHandler {
+	return &TodoHandler{
+		db: db,
+	}
+}
 func (h *TodoHandler) Show(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)

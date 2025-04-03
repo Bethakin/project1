@@ -27,7 +27,11 @@ func NewDatabase() (*Database, error) {
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 	sslMode := os.Getenv("DB_SSLMODE")
+
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", dbUser, dbPassword, dbHost, dbPort, dbName, sslMode)
+
+	log.Println("Connecting to database with:", connStr)
+
 	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("error opening database: %v", err)

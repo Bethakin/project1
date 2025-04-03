@@ -11,16 +11,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type TodoHandler struct {
+type UserHandler struct {
 	db *database.Database
 }
 
-func NewTodoHandler(db *database.Database) *TodoHandler {
-	return &TodoHandler{
+func NewUserHandler(db *database.Database) *UserHandler {
+	return &UserHandler{
 		db: db,
 	}
 }
-func (h *TodoHandler) Index(w http.ResponseWriter, r *http.Request) {
+
+func (h *UserHandler) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	users, err := h.db.GetAlluserss()
 	if err != nil {
@@ -37,7 +38,7 @@ func (h *TodoHandler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *TodoHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req model.TodoRequestusers
@@ -67,7 +68,7 @@ func (h *TodoHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *TodoHandler) Deleteusers(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Deleteusers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
@@ -93,11 +94,10 @@ func (h *TodoHandler) Deleteusers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *TodoHandler) Updateusers(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Updateusers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["users_id"])
-	//users_id, _ := strconv.Atoi(params["ıser_id"])
 	if err != nil {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
 		return
