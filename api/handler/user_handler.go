@@ -7,23 +7,24 @@ import (
 	"strconv"
 
 	"github.com/Bethakin/project1/internal/database"
+	"github.com/Bethakin/project1/internal/repository"
 	"github.com/Bethakin/project1/model"
 	"github.com/gorilla/mux"
 )
 
 type UserHandler struct {
-	db *database.Database
+	userRepo *repository.UserRepository
 }
 
 func NewUserHandler(db *database.Database) *UserHandler {
 	return &UserHandler{
-		db: db,
+		userRepo: repository.NewUserRepository(db),
 	}
 }
 
 func (h *UserHandler) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	users, err := h.db.GetAlluserss()
+	users, err := h.userRepo.GetAll()
 	if err != nil {
 		http.Error(w, "Error fetching users", http.StatusInternalServerError)
 		return
@@ -54,7 +55,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	if err := h.db.CreateUser(user); err != nil {
+	if err := h.userRepo.Create(user); err != nil {
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
@@ -72,23 +73,26 @@ func (h *UserHandler) Deleteusers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
-	user_id, err := strconv.Atoi(params["users_id"])
+	userID, err := strconv.Atoi(params["users_id"])
 	if err != nil {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
 		return
 	}
-	if err := h.db.DeleteUserTodos(user_id); err != nil {
-		http.Error(w, "Error deleting users todos", http.StatusInternalServerError)
+
+	if err := h.userRepo.DeleteUserTodos(userID); err != nil {
+		http.Error(w, "Error deleting user todos", http.StatusInternalServerError)
 		result := fmt.Sprintf(err.Error())
 		fmt.Println(result)
 		return
 	}
-	if err := h.db.DeleteUser(user_id); err != nil {
-		http.Error(w, "Error deleting users", http.StatusInternalServerError)
+
+	if err := h.userRepo.Delete(userID); err != nil {
+		http.Error(w, "Error deleting user", http.StatusInternalServerError)
 		return
 	}
+
 	response := model.Response{
-		Message: "users deleted successfully",
+		Message: "User deleted successfully",
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
@@ -107,20 +111,20 @@ func (h *UserHandler) Updateusers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	todo := &model.Todousers{
+	user := &model.Todousers{
 		Email:    req.Email,
 		Password: req.Password,
 	}
 
-	if err := h.db.UpdateUser(id, todo); err != nil {
+	if err := h.userRepo.Update(id, user); err != nil {
 		result := fmt.Sprintf(err.Error())
 		fmt.Println(result)
-		http.Error(w, "Error updating users", http.StatusInternalServerError)
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
 		return
 	}
 	response := model.Response{
-		Message: "users updated successfully",
-		Data:    todo,
+		Message: "User updated successfully",
+		Data:    user,
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)

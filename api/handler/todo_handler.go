@@ -7,48 +7,31 @@ import (
 	"strconv"
 
 	"github.com/Bethakin/project1/internal/database"
+	"github.com/Bethakin/project1/internal/repository"
 	"github.com/Bethakin/project1/model"
 	"github.com/gorilla/mux"
 )
 
 type TodoHandler struct {
-	db *database.Database
+	todoRepo *repository.TodoRepository
 }
 
 func NewTodoHandler(db *database.Database) *TodoHandler {
 	return &TodoHandler{
-		db: db,
-	}
-}
-func (h *TodoHandler) Show(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["users_id"])
-	if err != nil {
-		http.Error(w, "Invalid ID format", http.StatusBadRequest)
-		return
-	}
-	user, _ := h.db.GetUserByID(id)
-	response := model.Response{
-		Message: "User retrieved successfully",
-		Data:    user,
-	}
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
-		return
+		todoRepo: repository.NewTodoRepository(db),
 	}
 }
 
 func (h *TodoHandler) IndexTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["users_id"])
+	userID, err := strconv.Atoi(params["users_id"])
 	if err != nil {
 		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
 		return
 	}
 
-	todos, err := h.db.GetTodosByUserID(id)
+	todos, err := h.todoRepo.GetByUserID(userID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("No todos found: %s", err.Error()), http.StatusNotFound)
 		return
@@ -75,7 +58,7 @@ func (h *TodoHandler) ShowTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := h.db.GetTodoByID(id)
+	todo, err := h.todoRepo.GetByID(id)
 	if err != nil {
 		http.Error(w, "Todo not found", http.StatusNotFound)
 		return
@@ -95,7 +78,12 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
-	UsersID, _ := strconv.Atoi(params["users_id"])
+	userID, err := strconv.Atoi(params["users_id"])
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
 	var req model.TodoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -105,18 +93,20 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
+
 	todo := &model.Todo{
 		Title:       req.Title,
 		Description: req.Description,
-		UsersID:     UsersID,
+		UsersID:     userID,
 	}
 
-	if err := h.db.CreateTodo(todo); err != nil {
+	if err := h.todoRepo.Create(todo); err != nil {
 		http.Error(w, "Error creating todo", http.StatusInternalServerError)
 		result := fmt.Sprintf(err.Error())
 		fmt.Println(result)
 		return
 	}
+
 	response := model.Response{
 		Message: "Todo created successfully",
 		Data:    todo,
@@ -134,10 +124,12 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
 		return
 	}
-	if err := h.db.DeleteTodo(id); err != nil {
+
+	if err := h.todoRepo.Delete(id); err != nil {
 		http.Error(w, "Error deleting todo", http.StatusInternalServerError)
 		return
 	}
+
 	response := model.Response{
 		Message: "Todo deleted successfully",
 	}
@@ -149,26 +141,35 @@ func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
-	users_id, _ := strconv.Atoi(params["users_id"])
 	if err != nil {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
 		return
 	}
+
+	userID, err := strconv.Atoi(params["users_id"])
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
 	var req model.TodoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
 	todo := &model.Todo{
 		Title:       req.Title,
 		Description: req.Description,
 	}
-	if err := h.db.UpdateTodo(id, users_id, todo); err != nil {
-		http.Error(w, "Error updating users", http.StatusInternalServerError)
+
+	if err := h.todoRepo.Update(id, userID, todo); err != nil {
+		http.Error(w, "Error updating todo", http.StatusInternalServerError)
 		return
 	}
+
 	response := model.Response{
-		Message: "users updated successfully",
+		Message: "Todo updated successfully",
 		Data:    todo,
 	}
 	w.WriteHeader(http.StatusOK)
