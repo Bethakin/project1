@@ -27,10 +27,10 @@ func main() {
 	todoHandler := handler.NewTodoHandler(db)
 	userHandler := handler.NewUserHandler(db)
 	router := mux.NewRouter()
-
+	router.HandleFunc("/register", userHandler.CreateUser).Methods("POST")
 	userRouter := router.PathPrefix("/users").Subrouter()
 	userRouter.HandleFunc("", userHandler.Index).Methods("GET")
-	userRouter.HandleFunc("", userHandler.CreateUser).Methods("POST")
+	//userRouter.HandleFunc("", userHandler.CreateUser).Methods("POST")
 	userRouter.HandleFunc("/{users_id}", userHandler.Updateusers).Methods("PUT")
 	userRouter.HandleFunc("/{users_id}", userHandler.Deleteusers).Methods("DELETE")
 

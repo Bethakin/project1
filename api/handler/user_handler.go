@@ -51,6 +51,14 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Email is required", http.StatusBadRequest)
 		return
 	}
+	//hata kontrolü eksik???
+	users, _ := h.userRepo.GetAll()
+	for _, user := range users {
+		if user.Email == req.Email {
+			http.Error(w, "This email is already registered", http.StatusBadRequest)
+			return
+		}
+	}
 	user := &model.Todousers{
 		Email:    req.Email,
 		Password: req.Password,
