@@ -36,7 +36,7 @@ func (r *UserRepository) GetAll() ([]*model.Todousers, error) {
 	return users, nil
 }
 
-func (r *UserRepository) GetByID(id int) (*model.Todousers, error) {
+func (r *UserRepository) (id int) (*model.Todousers, error) {
 	var user model.Todousers
 	err := r.db.QueryRow("SELECT id, email, password FROM users WHERE id = $1", id).
 		Scan(&user.ID, &user.Email, &user.Password)
