@@ -25,6 +25,12 @@ func NewTodoHandler(db *database.Database) *TodoHandler {
 func (h *TodoHandler) IndexTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
+	userIDParam := params["users_id"]
+	userIDFromToken := r.Context().Value("userID").(float64)
+	if userIDParam != fmt.Sprintf("%.0f", userIDFromToken) {
+		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+		return
+	}
 	userID, err := strconv.Atoi(params["users_id"])
 	if err != nil {
 		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
@@ -52,6 +58,12 @@ func (h *TodoHandler) ShowTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
+	userIDParam := params["users_id"]
+	userIDFromToken := r.Context().Value("userID").(float64)
+	if userIDParam != fmt.Sprintf("%.0f", userIDFromToken) {
+		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+		return
+	}
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
@@ -78,6 +90,12 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
+	userIDParam := params["users_id"]
+	userIDFromToken := r.Context().Value("userID").(float64)
+	if userIDParam != fmt.Sprintf("%.0f", userIDFromToken) {
+		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+		return
+	}
 	userID, err := strconv.Atoi(params["users_id"])
 	if err != nil {
 		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
@@ -119,6 +137,12 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
+	userIDParam := params["users_id"]
+	userIDFromToken := r.Context().Value("userID").(float64)
+	if userIDParam != fmt.Sprintf("%.0f", userIDFromToken) {
+		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+		return
+	}
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
@@ -140,6 +164,12 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
+	userIDParam := params["users_id"]
+	userIDFromToken := r.Context().Value("userID").(float64)
+	if userIDParam != fmt.Sprintf("%.0f", userIDFromToken) {
+		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+		return
+	}
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
