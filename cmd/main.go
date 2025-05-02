@@ -38,7 +38,8 @@ func main() {
 	router.HandleFunc("/login", userHandler.LoginUser).Methods("POST")
 
 	protected := router.PathPrefix("/users").Subrouter()
-	protected.Use(utils.ValidateToken(jwtSecret))
+	//protected.Use(utils.ValidateToken(jwtSecret))
+	protected.Use(utils.AuthMiddleware(jwtSecret))
 
 	protected.HandleFunc("", userHandler.IndexAll).Methods("GET")
 	protected.HandleFunc("/{users_id}", userHandler.Index).Methods("GET")
