@@ -92,7 +92,7 @@ func (d *Database) GetTodoByID(id int) (*model.Todo, error) {
 }
 
 func (d *Database) GetTodosByUserID(id int) ([]*model.Todo, error) {
-	rows, err := d.DB.Query("SELECT id, title, description FROM todos WHERE user_id = $1", id)
+	rows, err := d.DB.Query("SELECT id, title, description, users_id FROM todos WHERE users_id = $1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (d *Database) GetTodosByUserID(id int) ([]*model.Todo, error) {
 	var todos []*model.Todo
 	for rows.Next() {
 		var todo model.Todo
-		if err := rows.Scan(&todo.ID, &todo.Title, &todo.Description); err != nil {
+		if err := rows.Scan(&todo.ID, &todo.Title, &todo.Description, &todo.UsersID); err != nil {
 			return nil, err
 		}
 		todos = append(todos, &todo)
@@ -133,7 +133,7 @@ func (d *Database) CreateUser(user *model.Todousers) error {
 
 func (d *Database) CreateTodo(todo *model.Todo) error {
 	return d.DB.QueryRow(
-		"INSERT INTO todos (title, description, user_id) VALUES ($1, $2, $3) RETURNING id",
+		"INSERT INTO todos (title, description, users_id) VALUES ($1, $2, $3) RETURNING id",
 		todo.Title, todo.Description, todo.UsersID,
 	).Scan(&todo.ID)
 }
@@ -173,7 +173,7 @@ func (d *Database) DeleteUser(id int) error {
 }
 
 func (d *Database) DeleteUserTodos(user_id int) error {
-	_, err := d.DB.Exec("DELETE FROM todos WHERE user_id = $1", user_id)
+	_, err := d.DB.Exec("DELETE FROM todos WHERE users_id = $1", user_id)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (d *Database) UpdateUser(id int, user *model.Todousers) error {
 
 func (d *Database) UpdateTodo(id int, user_id int, todo *model.Todo) error {
 	result, err := d.DB.Exec(
-		"UPDATE todos SET title = $1, description = $2 WHERE id = $3 AND user_id = $4",
+		"UPDATE todos SET title = $1, description = $2 WHERE id = $3 AND users_id = $4",
 		todo.Title, todo.Description, id, user_id,
 	)
 	if err != nil {

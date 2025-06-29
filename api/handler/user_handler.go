@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
+	_ "fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,7 +11,8 @@ import (
 	"github.com/Bethakin/project1/internal/repository"
 	utils "github.com/Bethakin/project1/jwt"
 	"github.com/Bethakin/project1/model"
-	"github.com/gorilla/mux"
+	_ "github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 )
 
 type UserHandler struct {
@@ -23,6 +24,8 @@ func NewUserHandler(db *database.Database) *UserHandler {
 		userRepo: repository.NewUserRepository(db),
 	}
 }
+
+/*
 func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	var userInput model.Todousers
 	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
@@ -58,8 +61,44 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, token)))
+}*/
+
+func (h *UserHandler) LoginUser(c echo.Context) error {
+	var user model.Todousers
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	existing, err := h.userRepo.GetByEmail(user.Email)
+	if err != nil || existing.Password != user.Password {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
+	}
+
+	token, err := utils.GenerateJWT(os.Getenv("JWT_SECRET"), existing.ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not generate token"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"token": token})
 }
 
+func (h *UserHandler) Index(c echo.Context) error {
+	idParam := c.Param("users_id")
+
+	userID, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	}
+
+	user, err := h.userRepo.GetByID(userID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "User not found"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"data": user})
+}
+
+/*
 func (h *UserHandler) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -85,7 +124,7 @@ func (h *UserHandler) Index(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}
-}
+}*/
 
 func (h *UserHandler) IndexAll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -105,6 +144,23 @@ func (h *UserHandler) IndexAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *UserHandler) CreateUser(c echo.Context) error {
+	var user model.Todousers
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	if err := h.userRepo.Create(&user); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "User creation failed"})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"message": "User created successfully",
+		"data":    user,
+	})
+}
+
+/*
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -179,6 +235,7 @@ func (h *UserHandler) Deleteusers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+
 func (h *UserHandler) Updateusers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
@@ -216,4 +273,38 @@ func (h *UserHandler) Updateusers(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}*/
+
+func (h *UserHandler) Updateusers(c echo.Context) error {
+	idParam := c.Param("users_id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	}
+
+	var user model.Todousers
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	if err := h.userRepo.Update(id, &user); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Update failed"})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"message": "User updated"})
+}
+
+func (h *UserHandler) Deleteusers(c echo.Context) error {
+	idParam := c.Param("users_id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	}
+
+	if err := h.userRepo.DeleteUserTodos(id); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Error deleting todos"})
+	}
+	if err := h.userRepo.Delete(id); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Error deleting user"})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"message": "User deleted"})
 }

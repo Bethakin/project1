@@ -19,7 +19,7 @@ func NewTodoRepository(db *database.Database) *TodoRepository {
 }
 
 func (r *TodoRepository) GetAll() ([]*model.Todo, error) {
-	rows, err := r.db.Query("SELECT id, title, description, user_id FROM todos")
+	rows, err := r.db.Query("SELECT id, title, description, users_id FROM todos")
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (r *TodoRepository) GetAll() ([]*model.Todo, error) {
 
 func (r *TodoRepository) GetByID(id int) (*model.Todo, error) {
 	var todo model.Todo
-	err := r.db.QueryRow("SELECT id, title, description, user_id FROM todos WHERE id = $1", id).
+	err := r.db.QueryRow("SELECT id, title, description, users_id FROM todos WHERE id = $1", id).
 		Scan(&todo.ID, &todo.Title, &todo.Description, &todo.UsersID)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (r *TodoRepository) GetByID(id int) (*model.Todo, error) {
 }
 
 func (r *TodoRepository) GetByUserID(userID int) ([]*model.Todo, error) {
-	rows, err := r.db.Query("SELECT id, title, description, user_id FROM todos WHERE user_id = $1", userID)
+	rows, err := r.db.Query("SELECT id, title, description, users_id FROM todos WHERE users_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,14 +71,14 @@ func (r *TodoRepository) GetByUserID(userID int) ([]*model.Todo, error) {
 
 func (r *TodoRepository) Create(todo *model.Todo) error {
 	return r.db.QueryRow(
-		"INSERT INTO todos (title, description, user_id) VALUES ($1, $2, $3) RETURNING id",
+		"INSERT INTO todos (title, description, users_id) VALUES ($1, $2, $3) RETURNING id",
 		todo.Title, todo.Description, todo.UsersID,
 	).Scan(&todo.ID)
 }
 
 func (r *TodoRepository) Update(id int, userID int, todo *model.Todo) error {
 	result, err := r.db.Exec(
-		"UPDATE todos SET title = $1, description = $2 WHERE id = $3 AND user_id = $4",
+		"UPDATE todos SET title = $1, description = $2 WHERE id = $3 AND users_id = $4",
 		todo.Title, todo.Description, id, userID,
 	)
 	if err != nil {

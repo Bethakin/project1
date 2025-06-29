@@ -91,9 +91,19 @@ func (r *UserRepository) Delete(id int) error {
 }
 
 func (r *UserRepository) DeleteUserTodos(userID int) error {
-	_, err := r.db.Exec("DELETE FROM todos WHERE user_id = $1", userID)
+	_, err := r.db.Exec("DELETE FROM todos WHERE users_id = $1", userID)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *UserRepository) GetByEmail(email string) (*model.Todousers, error) {
+	var user model.Todousers
+	err := r.db.QueryRow("SELECT id, email, password FROM users WHERE email = $1", email).
+		Scan(&user.ID, &user.Email, &user.Password)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

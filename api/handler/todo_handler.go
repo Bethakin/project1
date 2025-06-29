@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"encoding/json"
+	_ "encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,7 +9,8 @@ import (
 	"github.com/Bethakin/project1/internal/database"
 	"github.com/Bethakin/project1/internal/repository"
 	"github.com/Bethakin/project1/model"
-	"github.com/gorilla/mux"
+	_ "github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 )
 
 type TodoHandler struct {
@@ -22,6 +23,7 @@ func NewTodoHandler(db *database.Database) *TodoHandler {
 	}
 }
 
+/*
 func (h *TodoHandler) IndexTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
@@ -52,8 +54,21 @@ func (h *TodoHandler) IndexTodo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}
+}*/
+
+func (h *TodoHandler) IndexTodo(c echo.Context) error {
+	userID, err := strconv.Atoi(c.Param("users_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	}
+	todos, err := h.todoRepo.GetByUserID(userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{"data": todos})
 }
 
+/*
 func (h *TodoHandler) ShowTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -84,8 +99,21 @@ func (h *TodoHandler) ShowTodo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}
+}*/
+
+func (h *TodoHandler) ShowTodo(c echo.Context) error {
+	todoID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid todo ID"})
+	}
+	todo, err := h.todoRepo.GetByID(todoID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{"data": todo})
 }
 
+/*
 func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -131,8 +159,34 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}*/
+
+func (h *TodoHandler) CreateTodo(c echo.Context) error {
+	userID, err := strconv.Atoi(c.Param("users_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	}
+
+	var todo model.Todo
+	if err := c.Bind(&todo); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	todo.UsersID = userID
+
+	if err := h.todoRepo.Create(&todo); err != nil {
+		fmt.Println("DB error during todo creation:", err)
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Todo creation failed"})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"message": "Todo created",
+		"data":    todo,
+	})
 }
 
+/*
 func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -159,8 +213,41 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}*/
+
+func (h *TodoHandler) Delete(c echo.Context) error {
+	todoID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid todo ID"})
+	}
+	if err := h.todoRepo.Delete(todoID); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"message": "Todo deleted"})
 }
 
+func (h *TodoHandler) Update(c echo.Context) error {
+	userID, err := strconv.Atoi(c.Param("users_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	}
+	todoID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid todo ID"})
+	}
+
+	var todo model.Todo
+	if err := c.Bind(&todo); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+
+	if err := h.todoRepo.Update(todoID, userID, &todo); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"message": "Todo updated"})
+}
+
+/*
 func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
@@ -204,4 +291,4 @@ func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
-}
+}*/

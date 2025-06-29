@@ -1,4 +1,4 @@
-CREATE TABLE userss (
+CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255),
     password VARCHAR(255)
@@ -9,5 +9,5 @@ CREATE TABLE todos (
     title VARCHAR(255),
     description TEXT,
     users_id INT NOT NULL,
-    FOREIGN KEY (users_id) REFERENCES userss(id)
+    FOREIGN KEY (users_id) REFERENCES users(id)
 );
