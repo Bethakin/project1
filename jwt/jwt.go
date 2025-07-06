@@ -4,12 +4,24 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"context"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 )
 
+type contextKey string
+
+const userIDKey contextKey = "userID"
+
+func GetUserIDFromContext(ctx context.Context) (int, bool) {
+	val := ctx.Value(userIDKey)
+	userID, ok := val.(int)
+	return userID, ok
+}
+
+/*
 func AuthMiddleware(secret string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -38,13 +50,58 @@ func AuthMiddleware(secret string) echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}*/
+
+// AuthMiddleware parses the JWT and injects userID into context
+func AuthMiddleware(secret string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			authHeader := c.Request().Header.Get("Authorization")
+			if authHeader == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Missing Authorization header")
+			}
+
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+			if tokenString == authHeader {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid Authorization format")
+			}
+
+			claims, err := ValidateJWT(tokenString, secret)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token: "+err.Error())
+			}
+
+			sub, ok := claims["sub"]
+			if !ok {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Token missing 'sub' claim")
+			}
+
+			var userID int
+			switch v := sub.(type) {
+			case float64:
+				userID = int(v)
+			case int:
+				userID = v
+			default:
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid 'sub' type in token")
+			}
+
+			// Inject userID into context
+			ctx := context.WithValue(c.Request().Context(), userIDKey, userID)
+			c.SetRequest(c.Request().WithContext(ctx))
+
+
+			return next(c)
+		}
+	}
 }
 
 func GenerateJWT(secret string, userID int) (string, error) {
 	claims := jwt.MapClaims{
-		"sub": userID,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"sub": userID, // should be an integer
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
 }

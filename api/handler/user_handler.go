@@ -5,7 +5,7 @@ import (
 	_ "fmt"
 	"net/http"
 	"os"
-	"strconv"
+	_"strconv"
 
 	"github.com/Bethakin/project1/internal/database"
 	"github.com/Bethakin/project1/internal/repository"
@@ -83,11 +83,10 @@ func (h *UserHandler) LoginUser(c echo.Context) error {
 }
 
 func (h *UserHandler) Index(c echo.Context) error {
-	idParam := c.Param("users_id")
-
-	userID, err := strconv.Atoi(idParam)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	//idParam := c.Param("users_id")
+	userID, ok := utils.GetUserIDFromContext(c.Request().Context())
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "User ID not found in context"})
 	}
 
 	user, err := h.userRepo.GetByID(userID)
@@ -276,12 +275,10 @@ func (h *UserHandler) Updateusers(w http.ResponseWriter, r *http.Request) {
 }*/
 
 func (h *UserHandler) Updateusers(c echo.Context) error {
-	idParam := c.Param("users_id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	id, ok := utils.GetUserIDFromContext(c.Request().Context())
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "User ID not found in context"})
 	}
-
 	var user model.Todousers
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
@@ -294,12 +291,10 @@ func (h *UserHandler) Updateusers(c echo.Context) error {
 }
 
 func (h *UserHandler) Deleteusers(c echo.Context) error {
-	idParam := c.Param("users_id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+	id, ok := utils.GetUserIDFromContext(c.Request().Context())
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "User ID not found in context"})
 	}
-
 	if err := h.userRepo.DeleteUserTodos(id); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Error deleting todos"})
 	}

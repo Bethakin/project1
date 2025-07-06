@@ -10,6 +10,7 @@ import (
 	"github.com/Bethakin/project1/internal/repository"
 	"github.com/Bethakin/project1/model"
 	_ "github.com/gorilla/mux"
+	utils "github.com/Bethakin/project1/jwt"
 	"github.com/labstack/echo/v4"
 )
 
@@ -57,10 +58,10 @@ func (h *TodoHandler) IndexTodo(w http.ResponseWriter, r *http.Request) {
 }*/
 
 func (h *TodoHandler) IndexTodo(c echo.Context) error {
-	userID, err := strconv.Atoi(c.Param("users_id"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
-	}
+    userID, ok := utils.GetUserIDFromContext(c.Request().Context())
+    if !ok {
+        return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid user ID in context"})
+    }
 	todos, err := h.todoRepo.GetByUserID(userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -162,11 +163,13 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 }*/
 
 func (h *TodoHandler) CreateTodo(c echo.Context) error {
-	userID, err := strconv.Atoi(c.Param("users_id"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
+    userID, ok := utils.GetUserIDFromContext(c.Request().Context())
+    if !ok {
+        return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid user ID in context"})
+    }
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid user ID in context"})
 	}
-
 	var todo model.Todo
 	if err := c.Bind(&todo); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
@@ -227,10 +230,10 @@ func (h *TodoHandler) Delete(c echo.Context) error {
 }
 
 func (h *TodoHandler) Update(c echo.Context) error {
-	userID, err := strconv.Atoi(c.Param("users_id"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
-	}
+    userID, ok := utils.GetUserIDFromContext(c.Request().Context())
+    if !ok {
+        return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid user ID in context"})
+    }
 	todoID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid todo ID"})
